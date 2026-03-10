@@ -798,28 +798,90 @@
         }
     }
 
-    /* REFLECTION SCORING */
-    function calculateEssayScore(text, keywords) {
-        let score = 0; if(text.length > 50) score += 5; if(text.length > 150) score += 3;
-        let hits = 0; keywords.forEach(w => { if(text.toLowerCase().includes(w)) hits++; });
-        score += (hits * 2); return Math.min(score, 15);
+// Helper function to count unique keywords in a text
+    function countKeywords(text, keywords) {
+        const lowerText = text.toLowerCase();
+        let hits = 0;
+        keywords.forEach(w => {
+            if (lowerText.includes(w)) hits++;
+        });
+        return hits;
     }
+
     async function submitReflection(num) {
-        const q1 = document.getElementById(`ref${num}-q1`).value;
-        const q2 = document.getElementById(`ref${num}-q2`).value;
-        const btn = event.target; const fbBox = document.getElementById(`ref${num}-feedback`);
-        if(q1.length < 20 || q2.length < 20) { alert("Please elaborate more."); return; }
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scoring...';
-        const key1 = ["notification", "schedule", "limit", "distraction", "focus", "work", "balance", "anxiety", "habit"];
-        const key2 = ["connection", "face", "presence", "empathy", "communication", "quality", "online", "relationship"];
-        const total = calculateEssayScore(q1, key1) + calculateEssayScore(q2, key2);
+        const q1 = document.getElementById(`ref${num}-q1`).value.trim();
+        const q2 = document.getElementById(`ref${num}-q2`).value.trim();
+        const btn = event.target; 
+        const fbBox = document.getElementById(`ref${num}-feedback`);
         
-        if(total >= 25) {
-             fbBox.innerText = `Score: ${total}/30. Passed!`; fbBox.className = "text-sm font-bold text-green-600 mt-2";
-             if(currentUser) await db.collection('users').doc(currentUser.id).update({ [`act${num}_done`]: true, [`ref${num}_score`]: total });
-             setTimeout(() => { if(num === 1) unlockAndSwitch('module2'); if(num === 2) { preparePostTest(); unlockAndSwitch('posttest'); } }, 1500);
+        // 1. Sentence Validation
+        // Splits the text by periods, question marks, or exclamation points to count sentences
+        const q1Sentences = q1.split(/[.?!]+/).filter(s => s.trim().length > 0).length;
+        const q2Sentences = q2.split(/[.?!]+/).filter(s => s.trim().length > 0).length;
+
+        if (q1Sentences < 2 || q2Sentences < 2) {
+            alert("Mangyaring sumagot ng hindi bababa sa 2 pangungusap bawat tanong.\n(Please provide at least 2 sentences per question.)");
+            return;
+        }
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scoring...';
+        
+        // 2. Expanded Keywords (English, Tagalog, Taglish)
+        const key1 = [
+            "notification", "notipikasyon", "schedule", "iskedyul", "oras", 
+            "limit", "limita", "hangganan", "kontrol", "bawas",
+            "distraction", "istorbo", "abala", "focus", "pokus", "atensyon", 
+            "work", "trabaho", "balance", "balanse", 
+            "anxiety", "stress", "pag-aalala", "habit", "gawi", "ugali", "cellphone", "gadget"
+        ];
+        
+        const key2 = [
+            "connection", "koneksyon", "ugnayan", "face", "personal", "harapan", 
+            "presence", "presensya", "empathy", "unawa", 
+            "communication", "komunikasyon", "usap", "quality", "kalidad", 
+            "online", "socmed", "internet", "relationship", "relasyon", "kapwa", "pamilya", "kaibigan",
+            "toxic", "nakakasama", "negatibo", "inggit", "kumpara"
+        ];
+        
+        // Count hits for both questions and combine them
+        const hits1 = countKeywords(q1, key1);
+        const hits2 = countKeywords(q2, key2);
+        const totalHits = hits1 + hits2;
+        
+        // 3. Apply the Point System
+        let totalScore = 0;
+        if (totalHits >= 5) {
+            totalScore = 30;
+        } else if (totalHits === 4) {
+            totalScore = 28;
+        } else if (totalHits === 3) {
+            totalScore = 26; // Bridging gap for 4 words
+        } else if (totalHits === 2) {
+            totalScore = 25;
         } else {
-             fbBox.innerText = `Score: ${total}/30. Failed (Need 25). Elaborate more.`; fbBox.className = "text-sm font-bold text-red-600 mt-2"; btn.innerHTML = "Try Again";
+            totalScore = 20; // Failing score for 2 or fewer words
+        }
+        
+        // 4. Submit and UI Updates
+        if (totalScore >= 25) {
+             fbBox.innerText = `Score: ${totalScore}/30. Passed! (Keywords found: ${totalHits})`; 
+             fbBox.className = "text-sm font-bold text-green-600 mt-2";
+             
+             if(currentUser) {
+                 await db.collection('users').doc(currentUser.id).update({ 
+                     [`act${num}_done`]: true, 
+                     [`ref${num}_score`]: totalScore 
+                 });
+             }
+             
+             setTimeout(() => { 
+                 if(num === 1) unlockAndSwitch('module2'); 
+                 if(num === 2) { preparePostTest(); unlockAndSwitch('posttest'); } 
+             }, 1500);
+        } else {
+             fbBox.innerText = `Score: ${totalScore}/30. Failed. (Found ${totalHits} keywords, need at least 3). Elaborate more.`; 
+             fbBox.className = "text-sm font-bold text-red-600 mt-2"; 
+             btn.innerHTML = "Try Again";
         }
     }
 
