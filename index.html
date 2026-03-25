@@ -751,7 +751,7 @@
     /* VIDEO & TIMER */
     function startVideo(mod) {
         document.getElementById(`video-overlay-${mod}`).classList.add('hidden');
-        const duration = (mod === 1) ? 2028 : 1350;
+        const duration = (mod === 1) ? 2028 : 30;
         const btnId = (mod === 1) ? 'btn-to-act1' : 'btn-to-act2';
         startTimer(mod, btnId, duration);
     }
