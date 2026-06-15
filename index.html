@@ -472,6 +472,7 @@
                           <th>Email</th>
                           <th>Office</th>
                           <th>Gender</th>
+			  <th>Employment</th>
                           <th>Pre-Test</th>
                           <th>Post-Test</th>
                           <th>Rating</th>
@@ -686,6 +687,7 @@
                 <td class="p-3 text-xs">${u.user_email}</td>
                 <td class="p-3 text-xs">${u.office || '-'}</td>
                 <td class="p-3">${u.gender || '-'}</td>
+		<td class="p-3">${u.employment || '-'}</td> <td class="p-3 font-mono font-bold">${u.pretest_score || '-'}</td>
                 <td class="p-3 font-mono font-bold">${u.pretest_score || '-'}</td>
                 <td class="p-3 font-mono font-bold text-blue-600">${u.posttest_score || '-'}</td>
                 <td class="p-3 text-center font-bold">${u.eval_rating || '-'}</td>
@@ -811,7 +813,7 @@
 
     function exportToExcel() {
         const data = allRecords.map(u => ({
-            Name: u.user_name, Email: u.user_email, Office: u.office, Gender: u.gender,
+            Name: u.user_name, Email: u.user_email, Office: u.office, Gender: u.gender, Employment: u.employment || '-',
             PreTest: u.pretest_score, PostTest: u.posttest_score,
             Rating: u.eval_rating, Insights: u.eval_insight, Suggestions: u.eval_suggest,
             Ref1: u.ref1_score, Ref2: u.ref2_score, CertID: u.cert_id, Date: u.completion_date
